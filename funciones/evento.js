@@ -247,9 +247,6 @@ function eventFmtDate(d){
 function renderEvento(){
   if(eventoDetailOpen) return renderEventoDetail();
   const ev = DB.event;
-  const groupMatches = eventGroupStageMatches();
-  const koMatches = eventKnockoutMatches();
-  const wcStadiums = (DB.stadiums||[]).filter(s=>s.worldCup).length;
   return `
   <div class="section-title"><h2>${tabLabel('evento','FWC26')}</h2></div>
   ${tabDescHTML('evento')}
@@ -270,11 +267,15 @@ function renderEvento(){
     </div>
   </div>
 
-  <div class="grid cols-4" style="margin-top:14px;">
-    <div class="card stat-card"><div class="num">${ev.numTeams}</div><div class="label">Selecciones</div></div>
-    <div class="card stat-card"><div class="num">${groupMatches + koMatches}</div><div class="label">Partidos (${groupMatches} grupos + ${koMatches} eliminación)</div></div>
-    <div class="card stat-card"><div class="num">${ev.thirdPlaceAdvance}</div><div class="label">Mejores terceros que avanzan</div></div>
-    <div class="card stat-card"><div class="num">${wcStadiums||"—"}</div><div class="label">Sedes del torneo</div></div>
+  <div style="margin-top:14px;">
+  ${groupsList().map(g=>`
+    <div class="group-block">
+      <h3><span class="tag">Grupo ${g}</span> ${teamsInGroup(g).length} selecciones</h3>
+      <div class="grid cols-4">
+        ${teamsInGroupOrdered(g).map(t=>teamCardHTML(t)).join("")}
+      </div>
+    </div>
+  `).join("")}
   </div>
 
   <div class="card" data-action="open-evento-detail" style="cursor:pointer;margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
@@ -425,7 +426,7 @@ document.addEventListener("change", (e)=>{
 // de códigos M89–M104 por sede es orientativa (el orden real depende de los cruces).
 // Busca una selección por nombre (ignorando acentos) con alias conocidos.
 function findTeamByNameLoose(name){
-  const ALIAS = {"chequia":"republica checa","republica checa":"chequia","rd del congo":"republica democratica del congo"};
+  const ALIAS = {"chequia":"republica checa","republica checa":"chequia","rd del congo":"republica democratica del congo","rd congo":"republica democratica del congo","dr congo":"republica democratica del congo","republica democratica del congo":"rd congo"};
   const n = normalizeName(name);
   let t = DB.teams.find(x=>normalizeName(x.commonName)===n);
   if(!t && ALIAS[n]) t = DB.teams.find(x=>normalizeName(x.commonName)===ALIAS[n]);
