@@ -1,0 +1,1 @@
+# copa-manager-2026
