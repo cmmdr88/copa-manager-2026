@@ -43,16 +43,33 @@ function dedupeDuplicateTeams(){
   });
   const groups = {};
   teams.forEach((t,i)=>{ const r=find(i); (groups[r]=groups[r]||[]).push(t); });
+  // Cuenta los uniformes reales (t.kits[]) y también los campos legado, por si hay bases muy viejas.
+  const kitCount = t =>
+      (Array.isArray(t.kits) ? t.kits.length : 0)
+    + (t.kitHomeImg ? 1 : 0)
+    + (t.kitAwayImg ? 1 : 0);
+  // "Contenido real" del usuario: lo que sería doloroso perder (jugadores, uniformes, logo…). Pesa
+  // en una escala mucho mayor que los desempates de nombre/código, para que una selección editada
+  // NUNCA sea descartada en favor de un duplicado vacío autogenerado por integrateTeamsFromCountries.
+  const userContent = t =>
+      (t.players ? t.players.length : 0) * 100
+    + kitCount(t) * 40
+    + (t.logoImg ? 50 : 0)
+    + (t.federationName ? 10 : 0)
+    + (t.kitSponsor ? 10 : 0)
+    + ((t.nicknames && t.nicknames.length) ? 5 : 0)
+    + (t.group ? 5 : 0)
+    + (t.fifaPoints != null ? 2 : 0);
+  // Desempates suaves: solo deciden cuando el contenido real está empatado (p. ej. dos stubs vacíos
+  // del mismo país). No pueden voltear una selección que sí tiene datos.
+  const tiebreak = t =>
+      (validCodes.has(t.fifaCode) ? 2 : 0)
+    + (countryNameByCode[t.fifaCode] === t.commonName ? 1 : 0);
   const keepIds = new Set();
   Object.values(groups).forEach(group=>{
-    let best = group[0], bestScore = -1;
+    let best = group[0], bestScore = -Infinity;
     group.forEach(t=>{
-      const score = (validCodes.has(t.fifaCode) ? 6 : 0)
-        + (countryNameByCode[t.fifaCode]===t.commonName ? 3 : 0)
-        + (t.players?t.players.length:0)*10 + (t.group?5:0)
-        + (t.logoImg?2:0) + (t.kitHomeImg?1:0) + (t.kitAwayImg?1:0)
-        + (t.federationName?1:0) + (t.kitSponsor?1:0)
-        + ((t.nicknames&&t.nicknames.length)?1:0) + (t.fifaPoints!=null?1:0);
+      const score = userContent(t) + tiebreak(t);
       if(score>bestScore){ bestScore=score; best=t; }
     });
     keepIds.add(best.id);
