@@ -153,8 +153,9 @@ function handleAction(action, el){
     case "nav-back": navBack(); break;
     case "nav-forward": navForward(); break;
     case "set-ranking-section": rankingSection = el.dataset.id; render(); break;
-    case "set-selecciones-sort": {
-      if(seleccionesSort!==el.dataset.id){ seleccionesSort = el.dataset.id; render(); }
+    case "sort-selecciones": {
+      toggleSort(seleccionesSort, el.dataset.key || "name", "asc");
+      render();
       break;
     }
     case "nav-team-arrow": {
